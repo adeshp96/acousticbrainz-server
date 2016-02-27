@@ -1,7 +1,7 @@
 import db
 import copy
 import jsonschema
-
+from sqlalchemy import text
 
 # JSON schema is used for validation of submitted datasets. BASE_JSON_SCHEMA
 # defines basic structure of a dataset. JSON_SCHEMA_COMPLETE adds additional
@@ -148,6 +148,27 @@ def get(id):
             return row
         else:
             return None
+
+def get_public_datasets():
+    with db.engine.connect() as connection:
+        query = text("""
+            SELECT dataset.id::text
+                 , dataset.name
+                 , dataset.description
+                 , dataset.author
+                 , "user".musicbrainz_id as author_name
+                 , dataset.created
+              FROM dataset
+              JOIN "user"
+                ON "user".id = dataset.author
+             WHERE dataset.public = 't'
+          ORDER BY created desc
+        """)
+        result = connection.execute(query)
+        datasets = []
+        for row in result.fetchall():
+            datasets.append(dict(row))
+        return datasets
 
 
 def _get_classes(dataset_id):
