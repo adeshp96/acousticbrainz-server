@@ -8,11 +8,11 @@ from wtforms.validators import DataRequired
 from werkzeug.exceptions import NotFound, Unauthorized, BadRequest
 from webserver.external import musicbrainz
 from webserver import flash
+from utils import dataset_validator
 from collections import defaultdict
 import db.dataset
 import db.dataset_eval
 import db.user
-import jsonschema
 import csv
 import six
 
@@ -86,7 +86,7 @@ def create():
 
         try:
             dataset_id = db.dataset.create_from_dict(dataset_dict, current_user.id)
-        except jsonschema.ValidationError as e:
+        except dataset_validator.ValidationException as e:
             return jsonify(
                 success=False,
                 error=str(e),
@@ -114,7 +114,7 @@ def import_csv():
         }
         try:
             dataset_id = db.dataset.create_from_dict(dataset_dict, current_user.id)
-        except jsonschema.ValidationError as e:
+        except dataset_validator.ValidationException as e:
             raise BadRequest(str(e))
         flash.info("Dataset has been imported successfully.")
         return redirect(url_for(".view", id=dataset_id))
@@ -155,7 +155,7 @@ def edit(dataset_id):
 
         try:
             db.dataset.update(str(dataset_id), dataset_dict, current_user.id)
-        except jsonschema.ValidationError as e:
+        except dataset_validator.ValidationException as e:
             return jsonify(
                 success=False,
                 error=str(e),
